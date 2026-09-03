@@ -1,0 +1,352 @@
+Microsoft Windows [Version 10.0.26200.9168]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\LENOVO> mysql -u rot -p
+Enter password: ***********
+ERROR 1045 (28000): Access denied for user 'rot'@'localhost' (using password: YES)
+
+C:\Users\LENOVO> mysql -u root -p
+Enter password: ***********
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 14
+Server version: 8.0.46 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2026, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> select cgpa from student where roll_no=101;
+ERROR 1046 (3D000): No database selected
+mysql> DROP DATABASE IF EXISTS college_demo;
+Query OK, 4 rows affected (0.05 sec)
+
+mysql> CREATE DATABASE college_demo;
+Query OK, 1 row affected (0.00 sec)
+
+mysql>
+mysql> USE college_demo;
+Database changed
+mysql>
+mysql> SELECT @transaction_isolation;
++------------------------------------------------+
+| @transaction_isolation                         |
++------------------------------------------------+
+| NULL                                           |
++------------------------------------------------+
+1 row in set (0.00 sec)
+
+mysql>
+mysql> CREATE TABLE department(
+    ->      dept_id INT PRIMARY KEY,
+    ->      dept_name VARCHAR(50) UNIQUE NOT NULL
+    ->      );
+Query OK, 0 rows affected (0.02 sec)
+
+mysql>
+mysql> CREATE TABLE student (
+    ->     roll_no INT PRIMARY KEY,
+    ->     name VARCHAR(50) NOT NULL,
+    ->     email VARCHAR(50) UNIQUE,
+    ->     phone VARCHAR(15),
+    ->     dept_id INT,
+    ->     cgpa DECIMAL(3, 2),
+    ->     transaction_id VARCHAR(36),
+    ->     FOREIGN KEY (dept_id) REFERENCES department(dept_id)
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql>
+mysql> CREATE INDEX idx_student_dept ON student(dept_id);
+Query OK, 0 rows affected (0.02 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql>
+mysql>
+mysql> CREATE TABLE course (
+    ->      course_id INT PRIMARY KEY,
+    ->      course_name VARCHAR(50) NOT NULL,
+    ->      dept_id INT,
+    ->      FOREIGN KEY (dept_id) REFERENCES department(dept_id)
+    ->      );
+Query OK, 0 rows affected (0.02 sec)
+
+mysql>
+mysql> CREATE TABLE enrollment (
+    ->      roll_no INT,
+    ->      course_id INT,
+    ->      semester INT CHECK (semester BETWEEN 1 and 8),
+    ->      grade CHAR(2),
+    ->      PRIMARY KEY (roll_no, course_id, semester),
+    ->      FOREIGN KEY (roll_no) REFERENCES student(roll_no),
+    ->      FOREIGN KEY (course_id) REFERENCES course(course_id)
+    ->      );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql>
+mysql> INSERT INTO department Values(1, 'Artificial intelligence'), (2, 'Electrical');
+Query OK, 2 rows affected (0.01 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+mysql>
+mysql>
+mysql>
+mysql>
+mysql>       INSERT INTO student VALUES (101, 'Chaitanya', 'chaitanya@mail.com', '123456789012', 1, 8.50, 'TXN1001');
+Query OK, 1 row affected (0.00 sec)
+
+mysql>       INSERT INTO student VALUES (102, 'Manaswi', 'manaswi@mail.com', '987654321098', 2, 9.10, 'TXN1002');
+Query OK, 1 row affected (0.00 sec)
+
+mysql>
+mysql>        INSERT INTO course Values(701, 'DBMS', 1 ),(702, 'Circuits', 2);
+Query OK, 2 rows affected (0.00 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+mysql>
+mysql>        INSERT INTO enrollment Values (101, 701, 3, 'A');
+Query OK, 1 row affected (0.00 sec)
+
+mysql>        INSERT INTO enrollment Values (101, 702, 3, 'A'); -- same student, different course; allowed
+Query OK, 1 row affected (0.00 sec)
+
+mysql>
+mysql> SELECT * FROM department;
++---------+-------------------------+
+| dept_id | dept_name               |
++---------+-------------------------+
+|       1 | Artificial intelligence |
+|       2 | Electrical              |
++---------+-------------------------+
+2 rows in set (0.00 sec)
+
+mysql>        SELECT * FROM course;
++-----------+-------------+---------+
+| course_id | course_name | dept_id |
++-----------+-------------+---------+
+|       701 | DBMS        |       1 |
+|       702 | Circuits    |       2 |
++-----------+-------------+---------+
+2 rows in set (0.00 sec)
+
+mysql>        SELECT * FROM enrollment;
++---------+-----------+----------+-------+
+| roll_no | course_id | semester | grade |
++---------+-----------+----------+-------+
+|     101 |       701 |        3 | A     |
+|     101 |       702 |        3 | A     |
++---------+-----------+----------+-------+
+2 rows in set (0.00 sec)
+
+mysql>        SELECT * FROM student;
++---------+-----------+--------------------+--------------+---------+------+----------------+
+| roll_no | name      | email              | phone        | dept_id | cgpa | transaction_id |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+|     101 | Chaitanya | chaitanya@mail.com | 123456789012 |       1 | 8.50 | TXN1001        |
+|     102 | Manaswi   | manaswi@mail.com   | 987654321098 |       2 | 9.10 | TXN1002        |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+2 rows in set (0.00 sec)
+
+mysql>
+mysql> -- (Session A)
+mysql> START TRANSACTION;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql>
+mysql> UPDATE student
+    -> SET cgpa = 9.6
+    -> WHERE roll_no = 101;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql>
+mysql> -- (Session B)
+mysql> SELECT * FROM student;
++---------+-----------+--------------------+--------------+---------+------+----------------+
+| roll_no | name      | email              | phone        | dept_id | cgpa | transaction_id |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+|     101 | Chaitanya | chaitanya@mail.com | 123456789012 |       1 | 9.60 | TXN1001        |
+|     102 | Manaswi   | manaswi@mail.com   | 987654321098 |       2 | 9.10 | TXN1002        |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+2 rows in set (0.00 sec)
+
+mysql> SELECT * FROM enrollment WHERE roll_no = 101;
++---------+-----------+----------+-------+
+| roll_no | course_id | semester | grade |
++---------+-----------+----------+-------+
+|     101 |       701 |        3 | A     |
+|     101 |       702 |        3 | A     |
++---------+-----------+----------+-------+
+2 rows in set (0.00 sec)
+
+mysql>
+mysql> SELECT * FROM student;
++---------+-----------+--------------------+--------------+---------+------+----------------+
+| roll_no | name      | email              | phone        | dept_id | cgpa | transaction_id |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+|     101 | Chaitanya | chaitanya@mail.com | 123456789012 |       1 | 9.60 | TXN1001        |
+|     102 | Manaswi   | manaswi@mail.com   | 987654321098 |       2 | 9.10 | TXN1002        |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+2 rows in set (0.00 sec)
+
+mysql> Explain SELECT * FROM student WHERE dept_id= 1;
++----+-------------+---------+------------+------+------------------+------------------+---------+-------+------+----------+-------+
+| id | select_type | table   | partitions | type | possible_keys    | key              | key_len | ref   | rows | filtered | Extra |
++----+-------------+---------+------------+------+------------------+------------------+---------+-------+------+----------+-------+
+|  1 | SIMPLE      | student | NULL       | ref  | idx_student_dept | idx_student_dept | 5       | const |    1 |   100.00 | NULL  |
++----+-------------+---------+------------+------+------------------+------------------+---------+-------+------+----------+-------+
+1 row in set, 1 warning (0.00 sec)
+
+mysql> UPDATE student
+    -> SET cgpa = 9.5
+    -> WHERE roll_no = 101;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql>
+mysql> SELECT * FROM student;
++---------+-----------+--------------------+--------------+---------+------+----------------+
+| roll_no | name      | email              | phone        | dept_id | cgpa | transaction_id |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+|     101 | Chaitanya | chaitanya@mail.com | 123456789012 |       1 | 9.50 | TXN1001        |
+|     102 | Manaswi   | manaswi@mail.com   | 987654321098 |       2 | 9.10 | TXN1002        |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+2 rows in set (0.00 sec)
+
+mysql>
+mysql>  SELECT * FROM enrollment WHERE roll_no = 101;
++---------+-----------+----------+-------+
+| roll_no | course_id | semester | grade |
++---------+-----------+----------+-------+
+|     101 |       701 |        3 | A     |
+|     101 |       702 |        3 | A     |
++---------+-----------+----------+-------+
+2 rows in set (0.00 sec)
+
+mysql> Explain SELECT * FROM student WHERE dept_id= 1;
++----+-------------+---------+------------+------+------------------+------------------+---------+-------+------+----------+-------+
+| id | select_type | table   | partitions | type | possible_keys    | key              | key_len | ref   | rows | filtered | Extra |
++----+-------------+---------+------------+------+------------------+------------------+---------+-------+------+----------+-------+
+|  1 | SIMPLE      | student | NULL       | ref  | idx_student_dept | idx_student_dept | 5       | const |    1 |   100.00 | NULL  |
++----+-------------+---------+------------+------+------------------+------------------+---------+-------+------+----------+-------+
+1 row in set, 1 warning (0.00 sec)
+
+mysql> set transaction isolation level read uncommitted;
+ERROR 1568 (25001): Transaction characteristics can't be changed while a transaction is in progress
+mysql> start transaction;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> SELECT roll_no, name, cgpa FROM student WHERE roll_no = 101;
++---------+-----------+------+
+| roll_no | name      | cgpa |
++---------+-----------+------+
+|     101 | Chaitanya | 9.50 |
++---------+-----------+------+
+1 row in set (0.00 sec)
+
+mysql>
+mysql> -- (session B)
+mysql> SELECT * FROM student:
+    -> SELECT * FROM student;
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near ':
+SELECT * FROM student' at line 1
+mysql> ^C
+mysql> SELECT * FROM student;
++---------+-----------+--------------------+--------------+---------+------+----------------+
+| roll_no | name      | email              | phone        | dept_id | cgpa | transaction_id |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+|     101 | Chaitanya | chaitanya@mail.com | 123456789012 |       1 | 9.50 | TXN1001        |
+|     102 | Manaswi   | manaswi@mail.com   | 987654321098 |       2 | 9.10 | TXN1002        |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+2 rows in set (0.00 sec)
+
+mysql>  SELECT * FROM enrollment WHERE roll_no = 101;
++---------+-----------+----------+-------+
+| roll_no | course_id | semester | grade |
++---------+-----------+----------+-------+
+|     101 |       701 |        3 | A     |
+|     101 |       702 |        3 | A     |
++---------+-----------+----------+-------+
+2 rows in set (0.00 sec)
+
+mysql>
+mysql>
+mysql> start transaction;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> select * from student;
++---------+-----------+--------------------+--------------+---------+------+----------------+
+| roll_no | name      | email              | phone        | dept_id | cgpa | transaction_id |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+|     101 | Chaitanya | chaitanya@mail.com | 123456789012 |       1 | 9.50 | TXN1001        |
+|     102 | Manaswi   | manaswi@mail.com   | 987654321098 |       2 | 9.10 | TXN1002        |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+2 rows in set (0.00 sec)
+
+mysql> UPDATE student
+    ->      --> SET cgpa = 9.5
+    ->      --> SET cgpa = 9.5
+    ->
+    -> ;
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '--> SET cgpa = 9.5
+     --> SET cgpa = 9.5' at line 2
+mysql> UPDATE student
+    -> setv cgpa= 8.0
+    -> set cgpa= 8.0
+    -> where roll_no=101;
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'cgpa= 8.0
+set cgpa= 8.0
+where roll_no=101' at line 2
+mysql> UPDATE student
+    -> set cgpa= 8.0
+    -> where roll_no=101;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> rollback;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> start transaction;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> update student set cgpa=9.2 where roll_no=101;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> select * from student;
++---------+-----------+--------------------+--------------+---------+------+----------------+
+| roll_no | name      | email              | phone        | dept_id | cgpa | transaction_id |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+|     101 | Chaitanya | chaitanya@mail.com | 123456789012 |       1 | 9.20 | TXN1001        |
+|     102 | Manaswi   | manaswi@mail.com   | 987654321098 |       2 | 9.10 | TXN1002        |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+2 rows in set (0.00 sec)
+
+mysql> rollback;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql>  select * from student;
++---------+-----------+--------------------+--------------+---------+------+----------------+
+| roll_no | name      | email              | phone        | dept_id | cgpa | transaction_id |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+|     101 | Chaitanya | chaitanya@mail.com | 123456789012 |       1 | 9.50 | TXN1001        |
+|     102 | Manaswi   | manaswi@mail.com   | 987654321098 |       2 | 9.10 | TXN1002        |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+2 rows in set (0.00 sec)
+
+mysql> commit;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql>  select * from student;
++---------+-----------+--------------------+--------------+---------+------+----------------+
+| roll_no | name      | email              | phone        | dept_id | cgpa | transaction_id |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+|     101 | Chaitanya | chaitanya@mail.com | 123456789012 |       1 | 9.50 | TXN1001        |
+|     102 | Manaswi   | manaswi@mail.com   | 987654321098 |       2 | 9.10 | TXN1002        |
++---------+-----------+--------------------+--------------+---------+------+----------------+
+2 rows in set (0.00 sec)
+
+mysql>
