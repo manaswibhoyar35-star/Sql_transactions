@@ -228,11 +228,7 @@ mysql> SELECT roll_no, name, cgpa FROM student WHERE roll_no = 101;
 
 mysql>
 mysql> -- (session B)
-mysql> SELECT * FROM student:
-    -> SELECT * FROM student;
-ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near ':
-SELECT * FROM student' at line 1
-mysql> ^C
+
 mysql> SELECT * FROM student;
 +---------+-----------+--------------------+--------------+---------+------+----------------+
 | roll_no | name      | email              | phone        | dept_id | cgpa | transaction_id |
